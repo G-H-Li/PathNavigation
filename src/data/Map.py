@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+from src.data import obstacles
+
 
 class Map:
     """
@@ -17,12 +19,17 @@ class Map:
         self.obs = obs
 
     def update_obs(self, obs):
+        """
+        更新障碍物集合
+        :param obs: 集合
+        :return: None
+        """
         self.obs = obs
 
     def draw_map(self):
         """
         绘制地图
-        :return:
+        :return: None
         """
         obs_x = [x[0] for x in self.obs]
         obs_y = [x[1] for x in self.obs]
@@ -31,4 +38,14 @@ class Map:
         plt.plot(self.goal[0], self.goal[1], "gs")
         plt.plot(obs_x, obs_y, "ks")
         plt.axis("equal")
-        plt.show()
+
+
+def main():
+    _map = Map()
+    _map.update_obs(obstacles.get_static_obs(_map.x_range, _map.y_range))
+    _map.draw_map()
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()
