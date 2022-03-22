@@ -20,12 +20,12 @@ def get_static_obs(x_range, y_range):
     for i in range(y):
         obs.add((x - 1, i))
 
-    for i in range(x // 5, 3 * x // 5):
+    for i in range(x // 5, 2 * x // 5 + 1):
         obs.add((i, y // 2))
     for i in range(y // 2):
         obs.add((2 * x // 5, i))
 
-    for i in range(y // 2, y):
+    for i in range(1 * y // 3, y):
         obs.add((3 * x // 5, i))
     for i in range(y // 2 + 1):
         obs.add((4 * x // 5, i))

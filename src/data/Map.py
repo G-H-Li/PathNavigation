@@ -1,6 +1,5 @@
-import matplotlib.pyplot as plt
-
 from src.data import obstacles
+from src.data.plotting import plot_map, plot_show
 
 
 class Map:
@@ -34,18 +33,14 @@ class Map:
         绘制地图
         :return: None
         """
-        obs_x = [x[0] for x in self.obs]
-        obs_y = [x[1] for x in self.obs]
-
-        plt.plot(obs_x, obs_y, "ks")
-        plt.axis("equal")
+        plot_map(self)
 
 
 def main():
     _map = Map()
     _map.update_obs(obstacles.get_static_obs(_map.x_range, _map.y_range))
     _map.draw_map()
-    plt.show()
+    plot_show()
 
 
 if __name__ == "__main__":

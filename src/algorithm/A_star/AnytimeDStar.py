@@ -1,7 +1,9 @@
 import math
+import time
 
 from src.data import obstacles
 from src.data.Map import Map
+from src.data.plotting import plot_path, plot_show, plot_set_title, plot_map, plot_visited
 
 
 class AnytimeDStar:
@@ -32,6 +34,9 @@ class AnytimeDStar:
         self.rhs[self.start] = float('inf')
         self.rhs[self.goal] = 0.0
         self.OPEN[self.goal] = self.get_key(self.goal)
+        # display
+        self.visited = set()
+        self.FLAG = 'Anytime D Star:'
 
     def get_h(self, start, goal):
         """
@@ -155,6 +160,7 @@ class AnytimeDStar:
                 break
 
             self.OPEN.pop(key)
+            self.visited.add(key)
 
             if self.g[key] > self.rhs[key]:
                 self.g[key] = self.rhs[key]
@@ -179,7 +185,7 @@ class AnytimeDStar:
             if s == self.goal:
                 break
             if len(path) > self.x_range * self.y_range:
-                print("Do not find path")
+                print(self.FLAG, "Do not find path")
                 break
 
             g_list = {}
@@ -194,16 +200,29 @@ class AnytimeDStar:
     def detect_changes(self):
         pass
 
+    def explore_path(self):
+        plot_set_title("Anytime D *: e=" + str(self.eps))
+        plot_map(self.obs)
+        start_time = time.time()
+
+        self.visited = set()
+        self.compute_or_improve_path()
+
+        end_time = time.time()
+        print(self.FLAG, "e:", self.eps, ' cast:', end_time-start_time, 's')
+        plot_visited(self.visited)
+        plot_path(self.publish_path(), self.start, self.goal)
+
     def run(self):
         """
         运行主方法
         :return:
         """
-        self.compute_or_improve_path()
-        self.publish_path()
+        start_time = time.time()
 
+        self.explore_path()
         while True:
-            if self.eps <= 1:
+            if self.eps <= 1.0:
                 break
 
             self.eps -= 0.5
@@ -211,8 +230,12 @@ class AnytimeDStar:
             for s in self.OPEN:
                 self.OPEN[s] = self.get_key(s)
             self.CLOSED = set()
-            self.compute_or_improve_path()
-            self.publish_path()
+            self.explore_path()
+
+        end_time = time.time()
+        print(self.FLAG, "cost:", end_time-start_time, 's')
+
+        plot_show()
 
 
 def main():
@@ -220,6 +243,15 @@ def main():
     main func
     :return:
     """
+    heuristic_type = "euclidean"
+
+    env = Map(51, 31, heuristic_type=heuristic_type)
+    env.update_obs(obstacles.get_static_obs(env.x_range, env.y_range))
+
+    start = (5, 5)
+    goal = (45, 25)
+    demo = AnytimeDStar(env, start, goal, 2.0, heuristic_type)
+    demo.run()
 
 
 if __name__ == '__main__':
