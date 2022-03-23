@@ -26,22 +26,22 @@ class AnytimeDStar:
         self.g, self.rhs, self.OPEN, self.INCONS = {}, {}, {}, {}
         self.CLOSED = set()
         # initiation
-        for i in range(env.x_range):
-            for j in range(env.y_range):
-                self.g[(i, j)] = float('inf')
-                self.rhs[(i, j)] = float('inf')
-        self.rhs[self.start] = float('inf')
-        self.rhs[self.goal] = 0.0
-        self.OPEN[self.goal] = self.get_key(self.goal)
-        # dynamic
-        self.obs_add = set()
-        self.obs_remove = set()
+        self.init_data()
         # display
         self.visited = set()
         self.FLAG = 'Anytime D Star:'
         # result
         self.path = []
         self.error = 0
+
+    def init_data(self):
+        for i in range(self.env.x_range):
+            for j in range(self.env.y_range):
+                self.g[(i, j)] = float('inf')
+                self.rhs[(i, j)] = float('inf')
+        self.rhs[self.start] = float('inf')
+        self.rhs[self.goal] = 0.0
+        self.OPEN[self.goal] = self.get_key(self.goal)
 
     def get_h(self, start, goal):
         """
@@ -243,10 +243,6 @@ class AnytimeDStar:
             print(self.FLAG, "position:", node)
 
             if node not in self.env.obs:
-                self.obs_add.add(node)
-                if node in self.obs_remove:
-                    self.obs_remove.remove(node)
-
                 if node == self.start:
                     self.error += 1
                     self.start = self.find_mini_next_node(self.start)
@@ -257,10 +253,6 @@ class AnytimeDStar:
                 self.g[node] = float('inf')
                 self.rhs[node] = float('inf')
             else:
-                self.obs_remove.add(node)
-                if node in self.obs_add:
-                    self.obs_add.remove(node)
-
                 self.env.obs.remove(node)
                 self.update_state(node)
 
@@ -270,16 +262,8 @@ class AnytimeDStar:
             if self.error >= 1:  # significant changes
                 self.error = 0
                 self.eps += 1.5
-
-                for s in self.obs_add:
-                    for sn in self.get_neighbor(s):
-                        self.update_state(sn)
-
-                for s in self.obs_remove:
-                    for sn in self.get_neighbor(s):
-                        self.update_state(sn)
-                    self.update_state(s)
-
+                # re plan
+                self.init_data()
                 self.optimize_path()
             else:  # small changes
                 while True:
@@ -317,16 +301,15 @@ class AnytimeDStar:
 def main():
     """
     main func
-    TODO anytime D star 障碍物更新时，容易陷入无路径的情况，具体原因未知
     :return:
     """
     heuristic_type = "euclidean"
 
     env = Map(51, 31, heuristic_type=heuristic_type)
-    env.update_obs(obstacles.get_anytime_error_obs(env.x_range, env.y_range))
+    env.update_obs(obstacles.get_anytime_standard_obs(env.x_range, env.y_range))
 
     start = (5, 5)
-    goal = (5, 25)
+    goal = (45, 25)
     demo = AnytimeDStar(env, start, goal, 2.0, heuristic_type)
     demo.run()
 
