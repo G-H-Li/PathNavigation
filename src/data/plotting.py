@@ -23,7 +23,7 @@ def plot_visited(visited, color='gray'):
 def plot_path(path, start, goal, color='r'):
     path_x = [path[i][0] for i in range(len(path))]
     path_y = [path[i][1] for i in range(len(path))]
-    plt.plot(path_x, path_y, linewidth='3', color=color)
+    plt.plot(path_x, path_y, linewidth='2', color=color)
 
     plt.plot(start[0], start[1], 'b^')
     plt.plot(goal[0], goal[1], 'g^')
@@ -35,6 +35,17 @@ def plot_show():
     plt.show()
 
 
+def plot_clear():
+    plt.cla()
+
+
 def plot_set_title(title):
     plt.title(title)
 
+
+def plot_set_button_click_callback(func):
+    plt.gcf().canvas.mpl_connect('button_press_event', func)
+
+
+def plot_after_compute():
+    plt.gcf().canvas.draw_idle()
