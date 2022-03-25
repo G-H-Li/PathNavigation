@@ -13,7 +13,7 @@ def get_anytime_error_obs(x_range, y_range):
 def get_anytime_standard_obs(x_range, y_range):
     x = x_range
     y = y_range
-    obs = set(get_grid_obs(x, y))
+    obs = set()
 
     for i in range(10, 21):
         obs.add((i, 15))
