@@ -122,7 +122,9 @@ class AnytimeDStar:
         neighbors = set()
         for u in self.env.motions:
             s_next = tuple([s[i] + u[i] for i in range(2)])
-            if s_next not in self.env.obs:
+            if s_next not in self.env.obs and \
+                    0 < s_next[0] < self.env.x_range - 1 and \
+                    0 < s_next[1] < self.env.y_range - 1:
                 neighbors.add(s_next)
         return neighbors
 
