@@ -1,7 +1,6 @@
 import math
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from src.data import obstacles
@@ -28,7 +27,7 @@ class PotentialField:
         self.current_pos = np.asarray(start, dtype=float)
         self.MOTIONS = {}
         for motion in self.env.motions:
-            self.MOTIONS[motion] = get_vector_angle(np.asarray(motion))
+            self.MOTIONS[motion] = self.get_vector_angle(np.asarray(motion))
         # param
         self.rr = rr
         self.k_rep = k_rep
@@ -76,7 +75,7 @@ class PotentialField:
                 one_force = np.subtract(self.current_pos, np.asarray(obs)) * self.k_rep \
                             * (1 / dis - 1 / self.rr) \
                             / (dis ** 2)
-                np.add(force, one_force)
+                force = np.add(force, one_force)
 
         return force
 
@@ -112,13 +111,7 @@ class PotentialField:
 
         return length
 
-    def run(self):
-        plot_clear()
-        plot_set_title(self.FLAG)
-        plot_map(self.env.obs)
-
-        start_time = time.time()
-
+    def plan_path(self):
         while self.iter <= self.max_iter:
             if np.array_equal(self.current_pos, self.goal):
                 self.is_success = True
@@ -132,11 +125,19 @@ class PotentialField:
             self.current_pos = pos
             self.path.append((self.current_pos[0], self.current_pos[1]))
 
+    def run(self):
+        plot_clear()
+        plot_set_title(self.FLAG)
+        plot_map(self.env.obs)
+
+        start_time = time.time()
+        self.plan_path()
+        end_time = time.time()
         if not self.is_success:
             print(self.FLAG, "Do not find path")
+        else:
+            print(self.FLAG, "path length:", self.get_path_len(), ", cost:", end_time - start_time, 's')
 
-        end_time = time.time()
-        print(self.FLAG, "path length:", self.get_path_len(), ", cost:", end_time - start_time, 's')
         plot_path(self.path, self.start, self.goal)
         plot_show()
 
@@ -146,14 +147,14 @@ def main():
     # 主函数
     heuristic_type = "euclidean"
     env = Map(51, 31, heuristic_type=heuristic_type)
-    env.update_obs(obstacles.get_anytime_standard_obs(env.x_range, env.y_range))
+    env.update_obs(obstacles.get_potential_field_obs(env.x_range, env.y_range))
 
     # basic
     start = (5, 5)
     goal = (45, 25)
     k_att = 1.0
-    k_rep = 100.0
-    rr = 10
+    k_rep = 0.8
+    rr = 3
     max_iter = 1000
     demo = PotentialField(env, start, goal, k_att, k_rep, rr, max_iter)
     demo.run()

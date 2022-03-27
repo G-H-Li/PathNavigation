@@ -1,14 +1,10 @@
 import math
-import time
 
 import numpy as np
 
 from src.algorithm.potential_field.PotentialField import PotentialField
 from src.data import obstacles
 from src.data.Map import Map
-from src.data.plotting import plot_clear, plot_set_title, plot_map, plot_path, plot_show
-
-# 目前舍弃此方案
 
 
 class PotentialFieldWithRegression(PotentialField):
@@ -33,7 +29,7 @@ class PotentialFieldWithRegression(PotentialField):
             return self.coefficient / dis_goal * force
 
     def get_repulsion_force(self):
-        pass
+        return super().get_repulsion_force()
 
     def get_total_force(self):
         """
@@ -91,17 +87,11 @@ class PotentialFieldWithRegression(PotentialField):
         print(len(obs_set), obs_set)
         # TODO 获取障碍物边界，此处遇到问题，目前不知道下一步如何实现
 
-    def run(self):
+    def plan_path(self):
         """
         改进之后的运行流程
         :return:
         """
-        plot_clear()
-        plot_set_title(self.FLAG)
-        plot_map(self.env.obs)
-
-        start_time = time.time()
-
         while self.iter <= self.max_iter:
             if np.array_equal(self.current_pos, self.goal):
                 self.is_success = True
@@ -116,15 +106,8 @@ class PotentialFieldWithRegression(PotentialField):
                 self.current_pos = pos
                 self.path.append((self.current_pos[0], self.current_pos[1]))
 
-        if not self.is_success:
-            print(self.FLAG, "Do not find path")
-        else:
+        if self.is_success:
             self.optimize_path_by_regression()
-
-        end_time = time.time()
-        print(self.FLAG, "path length:", self.get_path_len(), ", cost:", end_time - start_time, 's')
-        plot_path(self.path, self.start, self.goal)
-        plot_show()
 
 
 def main():
@@ -132,8 +115,8 @@ def main():
     start = (5, 5)
     goal = (45, 25)
     k_att = 1.0
-    k_rep = 100.0
-    rr = 10
+    k_rep = 0.8
+    rr = 3
     max_iter = 1000
     # 主函数
     heuristic_type = "euclidean"

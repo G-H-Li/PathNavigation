@@ -28,6 +28,19 @@ def get_anytime_standard_obs(x_range, y_range):
     return obs
 
 
+def get_potential_field_obs(x_range, y_range):
+    obs = set()
+
+    for i in range(15):
+        obs.add((20, i))
+    for i in range(15, 30):
+        obs.add((30, i))
+    for i in range(16):
+        obs.add((40, i))
+
+    return obs
+
+
 def get_static_obs(x_range, y_range):
     """
     根据x, y范围，设置静态障碍物位置
