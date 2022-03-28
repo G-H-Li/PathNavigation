@@ -5,7 +5,8 @@ import numpy as np
 
 from src.data import obstacles
 from src.data.Map import Map
-from src.data.plotting import plot_clear, plot_set_title, plot_map, plot_path, plot_show
+from src.data.plotting import plot_clear, plot_set_title, plot_map, plot_path, plot_show, \
+    plot_set_button_click_callback, plot_after_compute
 
 
 class PotentialField:
@@ -118,6 +119,26 @@ class PotentialField:
 
         return length
 
+    def detect_changes(self, event):
+        x, y = event.xdata, event.ydata
+        if x < 0 or x > self.env.x_range - 1 or y < 0 or y > self.env.y_range - 1:
+            print(self.FLAG, "Please click right area!")
+        else:
+            node = (int(x), int(y))
+            print(self.FLAG, "position:", node)
+
+            if node not in self.env.obs:
+                self.env.obs.add(node)
+            else:
+                self.env.obs.remove(node)
+
+            self.path = [(self.start[0], self.start[1])]
+            self.current_pos = self.start
+            self.is_success = False
+            self.iter = 0
+            self.run_apf()
+            plot_after_compute()
+
     def plan_path(self):
         while self.iter <= self.max_iter:
             if np.array_equal(self.current_pos, self.goal):
@@ -132,7 +153,7 @@ class PotentialField:
             self.current_pos = pos
             self.path.append((self.current_pos[0], self.current_pos[1]))
 
-    def run(self):
+    def run_apf(self):
         plot_clear()
         plot_set_title(self.FLAG)
         plot_map(self.env.obs)
@@ -144,8 +165,12 @@ class PotentialField:
             print(self.FLAG, "Do not find path")
         else:
             print(self.FLAG, "path length:", self.get_path_len(), ", cost:", end_time - start_time, 's')
-
         plot_path(self.path, self.start, self.goal)
+
+    def run(self):
+        self.run_apf()
+        print(self.FLAG, "start detect...")
+        plot_set_button_click_callback(func=self.detect_changes)
         plot_show()
 
 
