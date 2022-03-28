@@ -94,9 +94,16 @@ class PotentialField:
         force_angle = self.get_vector_angle(force)
         sub_dic = {}
         for motion in self.MOTIONS:
-            sub_dic[motion] = abs(force_angle - self.MOTIONS[motion])
+            angle_bias = abs(force_angle - self.MOTIONS[motion])
+            if angle_bias < 45.0:
+                sub_dic[motion] = angle_bias
 
         sub_dic = sorted(sub_dic.items(), key=lambda kv: kv[1])
+        for dic in sub_dic:
+            pos = np.add(self.current_pos, np.asarray(dic[0]))
+            if (pos[0], pos[1]) not in self.env.obs:
+                return pos
+
         return np.add(self.current_pos, np.asarray(sub_dic[0][0]))
 
     def get_path_len(self):

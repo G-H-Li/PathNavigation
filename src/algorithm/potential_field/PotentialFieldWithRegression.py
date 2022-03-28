@@ -1,4 +1,5 @@
 import math
+import sys
 
 import numpy as np
 
@@ -16,22 +17,32 @@ class PotentialFieldWithRegression(PotentialField):
         self.dis_obs_goal = dis_obs_goal
         self.FLAG = 'Potential Field with Regression '
 
-    def get_attractive_force(self):
+    def get_attractive_force_rs(self, goal):
         """
         改进之后引力大小的计算
         :return: 引力对应矢量
         """
-        dis_goal = math.hypot(self.current_pos[0] - self.goal[0], self.current_pos[1] - self.goal[1])
-        force = self.k_att * np.subtract(self.goal, self.current_pos)
+        dis_goal = math.hypot(self.current_pos[0] - goal[0], self.current_pos[1] - goal[1])
+        force = self.k_att * np.subtract(goal, self.current_pos)
         if dis_goal <= self.coefficient:
             return force
         else:
             return self.coefficient / dis_goal * force
 
-    def get_repulsion_force(self):
-        return super().get_repulsion_force()
+    def get_repulsion_force_rs(self, goal):
+        force = np.zeros(2)
+        for obs in self.env.obs:
+            dis_obs = math.hypot(self.current_pos[0] - obs[0], self.current_pos[1] - obs[1])
+            dis_goal = math.hypot(self.current_pos[0] - goal[0], self.current_pos[1] - goal[1])
+            if dis_obs <= self.rr:
+                rep_1 = np.subtract(self.current_pos, np.asarray(obs)) * self.k_rep \
+                        * (1.0 / dis_obs - 1.0 / self.rr) / (dis_obs ** 2) * (dis_goal ** 2)
+                rep_2 = np.subtract(goal, np.asarray(obs)) * self.k_rep * ((1.0 / dis_obs - 1.0 / self.rr) ** 2) * dis_goal
+                force = np.add(rep_1, rep_2, force)
 
-    def get_total_force(self):
+        return force
+
+    def get_total_force_rs(self, goal):
         """
         改进计算合力方式
         :return:
@@ -41,35 +52,30 @@ class PotentialFieldWithRegression(PotentialField):
         for obs in self.env.obs:
             if math.hypot(self.current_pos[0] - obs[0], self.current_pos[1] - obs[1]) < min_dis:
                 min_obs = obs
-        dis_qc = math.hypot(min_obs[0] - self.goal[0],
-                            min_obs[1] - self.goal[1])
-        dis_gr = math.hypot(self.current_pos[0] - self.goal[0], self.current_pos[1] - self.goal[1])
+        dis_qc = math.hypot(min_obs[0] - goal[0], min_obs[1] - goal[1])
+        dis_gr = math.hypot(self.current_pos[0] - goal[0], self.current_pos[1] - goal[1])
         if dis_qc <= self.dis_obs_goal and dis_gr <= self.dis_goal_current:
-            return self.get_attractive_force()
+            return self.get_attractive_force_rs(goal)
         else:
-            return np.add(self.get_attractive_force(), self.get_repulsion_force())
+            return np.add(self.get_attractive_force_rs(goal), self.get_repulsion_force_rs(goal))
 
-    def optimize_path_by_regression(self):
-        """
-        基于回归的方法进行路径优化
-        :return:
-        """
-        pass
-
-    def deal_minima_problem(self):
-        """
-        处理局部最小值问题
-        :return:
-        """
-        obs_set = set()
-        if self.current_pos[1] - self.goal[1] == 0:
+    def check_obs_pos(self, goal):
+        # obs_list[0] y值大于等于当前点y值， obs_list[1] y值小于等于当前点y值
+        obs_list = [(float('inf'), float('inf')), (float('-inf'), float('-inf'))]
+        length = 2
+        if self.current_pos[1] - goal[1] == 0:
+            # 查找垂于与当前点与goal连线的线上的障碍物
             x = self.current_pos[0]
             for y in range(self.env.y_range):
                 node = (round(x), y)
                 if node in self.env.obs:
-                    obs_set.add(node)
+                    if self.current_pos[1] < y < obs_list[0][1]:
+                        obs_list[0] = node
+                    if obs_list[1][1] < y < self.current_pos[1]:
+                        obs_list[1] = node
+
         else:
-            k = - (self.current_pos[0] - self.goal[0]) / (self.current_pos[1] - self.goal[1])
+            k = - (self.current_pos[0] - goal[0]) / (self.current_pos[1] - goal[1])
             b = self.current_pos[1] - k * self.current_pos[0]
             bias = abs(k / 2)
             # 找到路径上障碍物
@@ -81,33 +87,139 @@ class PotentialFieldWithRegression(PotentialField):
                 nodes.add((x, math.floor(k * x + b)))
                 for node in nodes:
                     if node in self.env.obs:
-                        obs_set.add(node)
-                        break
-        # 寻找距离当前位置最近的两个障碍物
-        print(len(obs_set), obs_set)
-        # TODO 获取障碍物边界，此处遇到问题，目前不知道下一步如何实现
+                        if k >= 0:
+                            if self.current_pos[0] < node[0] < obs_list[0][0]:
+                                obs_list[0] = node
+                            if obs_list[1][0] < node[0] < self.current_pos[0]:
+                                obs_list[1] = node
+                        else:
+                            if self.current_pos[1] < node[1] < obs_list[0][1]:
+                                obs_list[0] = node
+                            if obs_list[1][1] < node[1] < self.current_pos[1]:
+                                obs_list[1] = node
+        if obs_list[0] == (float('inf'), float('inf')):
+            length -= 1
+        if obs_list[1] == (float('-inf'), float('-inf')):
+            length -= 1
+        return length
+
+    def dfs_obs(self, obs_pos):
+        stack = [obs_pos]
+        seen = [obs_pos]
+        directions = {obs_pos: [obs_pos, obs_pos]}
+        results = []
+
+        while stack:
+            v_node = stack.pop()
+            is_colon = True
+            for motion in Map.MOTIONS["manhattan"]:
+                s_next = tuple([v_node[i] + motion[i] for i in range(2)])
+                if s_next in self.env.obs and s_next not in seen:
+                    stack.append(s_next)
+                    seen.append(s_next)
+                    directions[s_next] = [motion, v_node]
+                    is_colon = False
+            if is_colon:  # 如果找到了一个尽头
+                cur_node = v_node
+                cur_motion = directions[cur_node][0]
+                pre_node = directions[cur_node][1]
+                pre_motion = directions[pre_node][0]
+                line = []
+                node = (cur_node[0]+cur_motion[0], cur_node[1]+cur_motion[1])
+                if node not in self.env.obs and (0 < node[0] < self.env.x_range) and (0 < node[1] < self.env.y_range):
+                    line.append(node)
+                while pre_node is not obs_pos:
+                    if cur_motion != pre_motion:
+                        node = (pre_node[0] + pre_motion[0], pre_node[1] + pre_motion[1])
+                        if node not in self.env.obs and (0 < node[0] < self.env.x_range) \
+                                and (0 < node[1] < self.env.y_range):
+                            line.append(node)
+                    cur_node = pre_node
+                    cur_motion = directions[cur_node][0]
+                    pre_node = directions[cur_node][1]
+                    pre_motion = directions[pre_node][0]
+                if line:
+                    results.append(line)
+
+        return results
+
+    def get_point_dis_line(self, point, goal):
+        vec1 = np.subtract(goal, np.asarray(point))
+        vec2 = np.subtract(self.current_pos, np.asarray(point))
+        distance = np.abs(np.cross(vec1, vec2) / np.linalg.norm(np.subtract(goal, self.current_pos)))
+        return distance
+
+    def deal_minima_problem(self, obs_pos, goal):
+        """
+        处理局部最小值问题
+        :obs_pos: 陷入障碍物的坐标
+        :return: 返回虚拟目标点序列
+        """
+        result = []
+        size = self.check_obs_pos(goal)
+        paths = self.dfs_obs(obs_pos)
+        # print(paths, len(paths))
+        if size == 0:
+            dis = []
+            for path in paths:
+                dis.append(self.get_point_dis_line(path[0], goal))
+            idx = dis.index(min(dis))
+            result.append(paths[idx][0])
+        elif size == 1:
+            dis = []
+            for path in paths:
+                dis_path = 0
+                for idx, node in enumerate(path):
+                    if idx == 0:
+                        dis_path += math.hypot(self.current_pos[0] - node[0], self.current_pos[1] - node[1])
+                    if idx == len(path) - 1:
+                        dis_path += math.hypot(goal[0] - node[0], goal[1] - node[1])
+                    if idx < len(path) - 1:
+                        dis_path += math.hypot(node[0] - path[idx+1][0], node[1] - path[idx+1][1])
+                dis.append(dis_path)
+            idx = dis.index(min(dis))
+            result.extend(paths[idx])
+        elif size == 2:
+            dis = []
+            for path in paths:
+                dis.append(self.get_point_dis_line(path[0], goal))
+            idx = dis.index(min(dis))
+            result.extend(paths[idx])
+        return result
+
+    def optimize_path_by_regression(self):
+        """
+        基于回归的方法进行路径优化
+        :return:
+        """
+        pass
+
+    def plan_path_rs(self, goal):
+        self.is_success = True
+        count = 0
+        while not np.array_equal(self.current_pos, goal):
+            if count > self.max_iter:
+                self.is_success = False
+                break
+            count += 1
+            force = self.get_total_force_rs(goal)
+            pos = self.get_next_pos(force)
+            # 触发局部最小值处理
+            if (pos[0], pos[1]) in self.env.obs:
+                targets = self.deal_minima_problem((pos[0], pos[1]), goal)
+                for target in targets:
+                    self.plan_path_rs(np.asarray(target))
+            else:
+                self.current_pos = pos
+                self.path.append((self.current_pos[0], self.current_pos[1]))
 
     def plan_path(self):
         """
         改进之后的运行流程
         :return:
         """
-        while self.iter <= self.max_iter:
-            if np.array_equal(self.current_pos, self.goal):
-                self.is_success = True
-                break
-            self.iter += 1
-            force = self.get_total_force()
-            pos = self.get_next_pos(force)
-            # 触发局部最小值处理
-            if (pos[0], pos[1]) in self.env.obs:
-                self.deal_minima_problem()
-            else:
-                self.current_pos = pos
-                self.path.append((self.current_pos[0], self.current_pos[1]))
-
-        if self.is_success:
-            self.optimize_path_by_regression()
+        self.plan_path_rs(self.goal)
+        self.optimize_path_by_regression()
 
 
 def main():
@@ -132,4 +244,5 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.setrecursionlimit(10000)
     main()
