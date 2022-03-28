@@ -86,7 +86,7 @@ class PotentialField:
         """
         return np.add(self.get_attractive_force(), self.get_repulsion_force())
 
-    def get_next_pos(self, force):
+    def get_next_pos(self, start, force):
         """
         计算下一个点位
         :return: 下一个点位的向量
@@ -100,11 +100,11 @@ class PotentialField:
 
         sub_dic = sorted(sub_dic.items(), key=lambda kv: kv[1])
         for dic in sub_dic:
-            pos = np.add(self.current_pos, np.asarray(dic[0]))
+            pos = np.add(start, np.asarray(dic[0]))
             if (pos[0], pos[1]) not in self.env.obs:
                 return pos
 
-        return np.add(self.current_pos, np.asarray(sub_dic[0][0]))
+        return np.add(start, np.asarray(sub_dic[0][0]))
 
     def get_path_len(self):
         """
@@ -125,7 +125,7 @@ class PotentialField:
                 break
             self.iter += 1
             force = self.get_total_force()
-            pos = self.get_next_pos(force)
+            pos = self.get_next_pos(self.current_pos, force)
             # 触发局部最小值处理
             if (pos[0], pos[1]) in self.env.obs:
                 break

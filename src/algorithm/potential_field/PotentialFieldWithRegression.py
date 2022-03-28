@@ -1,5 +1,4 @@
 import math
-import sys
 
 import numpy as np
 
@@ -17,13 +16,13 @@ class PotentialFieldWithRegression(PotentialField):
         self.dis_obs_goal = dis_obs_goal
         self.FLAG = 'Potential Field with Regression '
 
-    def get_attractive_force_rs(self, goal):
+    def get_attractive_force_rs(self, start, goal):
         """
         改进之后引力大小的计算
         :return: 引力对应矢量
         """
-        dis_goal = math.hypot(self.current_pos[0] - goal[0], self.current_pos[1] - goal[1])
-        force = self.k_att * np.subtract(goal, self.current_pos)
+        dis_goal = math.hypot(start[0] - goal[0], start[1] - goal[1])
+        force = self.k_att * np.subtract(goal, start)
         if dis_goal <= self.coefficient:
             return force
         else:
@@ -55,16 +54,20 @@ class PotentialFieldWithRegression(PotentialField):
         dis_qc = math.hypot(min_obs[0] - goal[0], min_obs[1] - goal[1])
         dis_gr = math.hypot(self.current_pos[0] - goal[0], self.current_pos[1] - goal[1])
         if dis_qc <= self.dis_obs_goal and dis_gr <= self.dis_goal_current:
-            return self.get_attractive_force_rs(goal)
+            return self.get_attractive_force_rs(self.current_pos, goal)
         else:
-            return np.add(self.get_attractive_force_rs(goal), self.get_repulsion_force_rs(goal))
+            return np.add(self.get_attractive_force_rs(self.current_pos, goal), self.get_repulsion_force_rs(goal))
 
     def check_obs_pos(self, goal):
+        """
+        查找垂于与当前点与goal连线的线上的障碍物
+        :param goal:
+        :return:
+        """
         # obs_list[0] y值大于等于当前点y值， obs_list[1] y值小于等于当前点y值
         obs_list = [(float('inf'), float('inf')), (float('-inf'), float('-inf'))]
         length = 2
         if self.current_pos[1] - goal[1] == 0:
-            # 查找垂于与当前点与goal连线的线上的障碍物
             x = self.current_pos[0]
             for y in range(self.env.y_range):
                 node = (round(x), y)
@@ -73,7 +76,6 @@ class PotentialFieldWithRegression(PotentialField):
                         obs_list[0] = node
                     if obs_list[1][1] < y < self.current_pos[1]:
                         obs_list[1] = node
-
         else:
             k = - (self.current_pos[0] - goal[0]) / (self.current_pos[1] - goal[1])
             b = self.current_pos[1] - k * self.current_pos[0]
@@ -158,7 +160,6 @@ class PotentialFieldWithRegression(PotentialField):
         result = []
         size = self.check_obs_pos(goal)
         paths = self.dfs_obs(obs_pos)
-        # print(paths, len(paths))
         if size == 0:
             dis = []
             for path in paths:
@@ -187,12 +188,73 @@ class PotentialFieldWithRegression(PotentialField):
             result.extend(paths[idx])
         return result
 
+    def has_obs_in_path(self, start, goal):
+        result = False
+        if goal[0] - start[0] == 0:
+            if start[1] > goal[1]:
+                min_y = goal[1]
+                max_y = start[1]
+            else:
+                min_y = start[1]
+                max_y = goal[1]
+            for y in range(int(min_y), int(max_y)):
+                node = (goal[0], y)
+                if node in self.env.obs:
+                    result = True
+        else:
+            k = (goal[1] - start[1]) / (goal[0] - start[0])
+            b = goal[1] - k * goal[0]
+            bias = abs(k/2)
+            if start[0] > goal[0]:
+                min_x = goal[0]
+                max_x = start[0]
+            else:
+                min_x = start[0]
+                max_x = goal[0]
+            for x in range(int(min_x), int(max_x)):
+                nodes = set()
+                nodes.add((x, round(k * x + b - bias)))
+                nodes.add((x, round(k * x + b + bias)))
+                nodes.add((x, math.ceil(k * x + b)))
+                nodes.add((x, math.floor(k * x + b)))
+                for node in nodes:
+                    if node in self.env.obs:
+                        result = True
+        return result
+
+    def get_path_apf(self, start, target):
+        pos = start
+        path = [(pos[0], pos[1])]
+        while not np.array_equal(pos, target):
+            force = self.get_attractive_force_rs(pos, target)
+            pos = self.get_next_pos(pos, force)
+            path.append((pos[0], pos[1]))
+        return path
+
     def optimize_path_by_regression(self):
         """
         基于回归的方法进行路径优化
         :return:
         """
-        pass
+        cur_end = 1
+        cur_start = cur_end - 1
+        path = [self.path[0]]
+        while cur_start < len(self.path):
+            start = self.path[cur_start]
+            end = self.path[cur_end]
+            if self.has_obs_in_path(start, end):
+                target = self.path[cur_end - 1]
+                sub_path = self.get_path_apf(np.asarray(start), np.asarray(target))
+                path.extend(sub_path[1:])
+                cur_start = cur_end - 1
+            else:
+                if cur_end == len(self.path) - 1:
+                    if start not in path:
+                        path.append(start)
+                    cur_start += 1
+                else:
+                    cur_end += 1
+        return path
 
     def plan_path_rs(self, goal):
         self.is_success = True
@@ -203,7 +265,7 @@ class PotentialFieldWithRegression(PotentialField):
                 break
             count += 1
             force = self.get_total_force_rs(goal)
-            pos = self.get_next_pos(force)
+            pos = self.get_next_pos(self.current_pos, force)
             # 触发局部最小值处理
             if (pos[0], pos[1]) in self.env.obs:
                 targets = self.deal_minima_problem((pos[0], pos[1]), goal)
@@ -219,7 +281,7 @@ class PotentialFieldWithRegression(PotentialField):
         :return:
         """
         self.plan_path_rs(self.goal)
-        self.optimize_path_by_regression()
+        self.path = self.optimize_path_by_regression()
 
 
 def main():
@@ -244,5 +306,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.setrecursionlimit(10000)
     main()
