@@ -56,7 +56,7 @@ class PotentialFieldWithPGDA(PotentialField):
                 break
             self.iter += 1
             force = self.get_total_force()
-            pos = self.get_next_pos(force)
+            pos = self.get_next_pos(self.current_pos, force)
             # 触发局部最小值处理
             if (pos[0], pos[1]) in self.env.obs:
                 self.is_minimal += 1
