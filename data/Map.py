@@ -1,5 +1,5 @@
-from src.data import obstacles
-from src.data.plotting import plot_map, plot_show
+from data import obstacles
+from data.plotting import plot_map, plot_show
 
 
 class Map:

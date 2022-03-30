@@ -2,9 +2,9 @@ import math
 
 import numpy as np
 
-from src.algorithm.potential_field.PotentialField import PotentialField
-from src.data import obstacles
-from src.data.Map import Map
+from algorithm.potential_field.PotentialField import PotentialField
+from data import obstacles
+from data.Map import Map
 
 
 class PotentialFieldWithRegression(PotentialField):

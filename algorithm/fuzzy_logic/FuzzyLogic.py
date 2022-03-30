@@ -5,13 +5,13 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
-from src.data import obstacles
-from src.data.Map import Map
-from src.data.plotting import plot_map, plot_set_title, plot_clear, plot_path, plot_show
+from data import obstacles
+from data.Map import Map
+from data.plotting import plot_map, plot_set_title, plot_clear, plot_path, plot_show
 
 
 class FuzzyLogic:
-    def __init__(self, env, start, goal, rr, show_param=False):
+    def __init__(self, env, start, goal, rr, show_param):
         self.env = env
         self.start = start
         self.goal = goal
@@ -57,15 +57,15 @@ class FuzzyLogic:
         if is_show:
             self.goal_dis.view()
 
-        self.goal_angle['left'] = fuzz.gaussmf(self.obs_angle.universe, -180, 150)
-        self.goal_angle['right'] = fuzz.gaussmf(self.obs_angle.universe, 180, 150)
-        self.goal_angle['targetDirection'] = fuzz.gaussmf(self.obs_angle.universe, 0, 8)
+        self.goal_angle['left'] = fuzz.gaussmf(self.goal_angle.universe, -180, 150)
+        self.goal_angle['right'] = fuzz.gaussmf(self.goal_angle.universe, 180, 150)
+        self.goal_angle['targetDirection'] = fuzz.gaussmf(self.goal_angle.universe, 0, 8)
         if is_show:
             self.goal_angle.view()
 
-        self.run_angle['turn-left'] = fuzz.gaussmf(self.obs_angle.universe, -180, 150)
-        self.run_angle['turn-right'] = fuzz.gaussmf(self.obs_angle.universe, 180, 150)
-        self.run_angle['zero'] = fuzz.gaussmf(self.obs_angle.universe, 0, 8)
+        self.run_angle['turn-left'] = fuzz.gaussmf(self.run_angle.universe, -180, 150)
+        self.run_angle['turn-right'] = fuzz.gaussmf(self.run_angle.universe, 180, 150)
+        self.run_angle['straight'] = fuzz.gaussmf(self.run_angle.universe, 0, 8)
         if is_show:
             self.run_angle.view()
 
@@ -78,9 +78,9 @@ class FuzzyLogic:
                           consequent=self.run_angle['turn-right'])
         rule4 = ctrl.Rule(antecedent=(self.obs_dis['near'] & self.goal_dis['far'] & self.obs_angle['right']),
                           consequent=self.run_angle['turn-left'])
-        rule5 = ctrl.Rule(antecedent=self.goal_angle['targetDirection'], consequent=self.run_angle['zero'])
+        rule5 = ctrl.Rule(antecedent=self.goal_angle['targetDirection'], consequent=self.run_angle['straight'])
         rule6 = ctrl.Rule(antecedent=(self.obs_dis['far'] & self.goal_angle['targetDirection']),
-                          consequent=self.run_angle['zero'])
+                          consequent=self.run_angle['straight'])
         self.rules = [rule1, rule2, rule3, rule4, rule5, rule6]
 
     @staticmethod
@@ -187,13 +187,13 @@ class FuzzyLogic:
 def main():
     heuristic_type = "euclidean"
     env = Map(51, 31, heuristic_type=heuristic_type)
-    env.update_obs(obstacles.get_anytime_standard_obs(env.x_range, env.y_range))
+    env.update_obs(obstacles.get_grid_obs(env.x_range, env.y_range))
 
     # basic
     start = (5, 5)
     goal = (45, 25)
     rr = 3
-    demo = FuzzyLogic(env, start, goal, rr, False)
+    demo = FuzzyLogic(env, start, goal, rr, True)
     demo.run()
 
 

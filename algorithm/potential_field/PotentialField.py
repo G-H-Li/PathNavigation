@@ -3,9 +3,9 @@ import time
 
 import numpy as np
 
-from src.data import obstacles
-from src.data.Map import Map
-from src.data.plotting import plot_clear, plot_set_title, plot_map, plot_path, plot_show, \
+from data import obstacles
+from data.Map import Map
+from data.plotting import plot_clear, plot_set_title, plot_map, plot_path, plot_show, \
     plot_set_button_click_callback, plot_after_compute
 
 
