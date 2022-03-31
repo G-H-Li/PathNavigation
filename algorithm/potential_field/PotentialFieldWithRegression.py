@@ -1,6 +1,7 @@
 import math
 
 import numpy as np
+from bresenham import bresenham
 
 from algorithm.potential_field.PotentialField import PotentialField
 from data import obstacles
@@ -191,46 +192,11 @@ class PotentialFieldWithRegression(PotentialField):
 
     def has_obs_in_path(self, start, goal):
         result = False
-        if goal[0] - start[0] == 0:
-            if start[1] > goal[1]:
-                min_y = goal[1]
-                max_y = start[1]
-            else:
-                min_y = start[1]
-                max_y = goal[1]
-            for y in range(int(min_y), int(max_y)):
-                node = (goal[0], y)
-                if node in self.env.obs:
-                    result = True
-        else:
-            k = (goal[1] - start[1]) / (goal[0] - start[0])
-            b = goal[1] - k * goal[0]
-            bias = abs(k/2)
-            if start[0] > goal[0]:
-                min_x = goal[0]
-                max_x = start[0]
-            else:
-                min_x = start[0]
-                max_x = goal[0]
-            for x in range(int(min_x), int(max_x)):
-                nodes = set()
-                nodes.add((x, round(k * x + b - bias)))
-                nodes.add((x, round(k * x + b + bias)))
-                nodes.add((x, math.ceil(k * x + b)))
-                nodes.add((x, math.floor(k * x + b)))
-                for node in nodes:
-                    if node in self.env.obs:
-                        result = True
-        return result
-
-    def get_path_apf(self, start, target):
-        pos = start
-        path = [(pos[0], pos[1])]
-        while not np.array_equal(pos, target):
-            force = self.get_attractive_force_rs(pos, target)
-            pos = self.get_next_pos(pos, force)
-            path.append((pos[0], pos[1]))
-        return path
+        nodes = list(bresenham(int(start[0]), int(start[1]), int(goal[0]), int(goal[1])))
+        for node in nodes:
+            if node in self.env.obs:
+                result = True
+        return result, nodes
 
     def optimize_path_by_regression(self):
         """
@@ -240,20 +206,20 @@ class PotentialFieldWithRegression(PotentialField):
         cur_end = 1
         cur_start = cur_end - 1
         path = [self.path[0]]
+        pre_sub_path = []
         while cur_start < len(self.path):
             start = self.path[cur_start]
             end = self.path[cur_end]
-            if self.has_obs_in_path(start, end):
-                target = self.path[cur_end - 1]
-                sub_path = self.get_path_apf(np.asarray(start), np.asarray(target))
-                path.extend(sub_path[1:])
+            has_obs, sub_path = self.has_obs_in_path(start, end)
+            if has_obs:
+                path.extend(pre_sub_path[1:])
                 cur_start = cur_end - 1
             else:
                 if cur_end == len(self.path) - 1:
-                    if start not in path:
-                        path.append(start)
-                    cur_start += 1
+                    path.extend(sub_path[1:])
+                    cur_start = len(self.path)
                 else:
+                    pre_sub_path = sub_path
                     cur_end += 1
         return path
 
