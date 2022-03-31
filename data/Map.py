@@ -12,13 +12,15 @@ class Map:
         "manhattan": [(-1, 0), (0, 1), (1, 0), (0, -1)]
     }
 
-    def __init__(self, x_range=51, y_range=31, obs=None, heuristic_type="euclidean"):
+    def __init__(self, x_range=51, y_range=31, obs=None, free=None, heuristic_type="euclidean"):
         if obs is None:
             obs = set()
         self.x_range = x_range
         self.y_range = y_range
         self.motions = Map.MOTIONS[heuristic_type]
         self.obs = obs
+        # free 用于GA算法
+        self.free = free
 
     def update_obs(self, obs):
         """
