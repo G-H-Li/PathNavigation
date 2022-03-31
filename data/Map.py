@@ -22,13 +22,15 @@ class Map:
         # free 用于GA算法
         self.free = free
 
-    def update_obs(self, obs):
+    def update_obs(self, obs, free):
         """
         更新障碍物集合
+        :param free: 无障碍物
         :param obs: 集合
         :return: None
         """
         self.obs = obs
+        self.free = free
 
     def draw_map(self):
         """

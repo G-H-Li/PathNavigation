@@ -179,7 +179,8 @@ def main():
     # 主函数
     heuristic_type = "euclidean"
     env = Map(51, 31, heuristic_type=heuristic_type)
-    env.update_obs(obstacles.get_potential_field_obs(env.x_range, env.y_range))
+    obs, free = obstacles.get_anytime_standard_obs(env.x_range, env.y_range)
+    env.update_obs(obs, free)
 
     # basic
     start = (5, 5)

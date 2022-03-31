@@ -36,7 +36,8 @@ class PotentialFieldWithRegression(PotentialField):
             if dis_obs <= self.rr:
                 rep_1 = np.subtract(self.current_pos, np.asarray(obs)) * self.k_rep \
                         * (1.0 / dis_obs - 1.0 / self.rr) / (dis_obs ** 2) * (dis_goal ** 2)
-                rep_2 = np.subtract(goal, np.asarray(obs)) * self.k_rep * ((1.0 / dis_obs - 1.0 / self.rr) ** 2) * dis_goal
+                rep_2 = np.subtract(goal, np.asarray(obs)) * self.k_rep * (
+                            (1.0 / dis_obs - 1.0 / self.rr) ** 2) * dis_goal
                 force = np.add(rep_1, rep_2, force)
 
         return force
@@ -127,7 +128,7 @@ class PotentialFieldWithRegression(PotentialField):
                 pre_node = directions[cur_node][1]
                 pre_motion = directions[pre_node][0]
                 line = []
-                node = (cur_node[0]+cur_motion[0], cur_node[1]+cur_motion[1])
+                node = (cur_node[0] + cur_motion[0], cur_node[1] + cur_motion[1])
                 if node not in self.env.obs and (0 < node[0] < self.env.x_range) and (0 < node[1] < self.env.y_range):
                     line.append(node)
                 while pre_node is not obs_pos:
@@ -176,7 +177,7 @@ class PotentialFieldWithRegression(PotentialField):
                     if idx == len(path) - 1:
                         dis_path += math.hypot(goal[0] - node[0], goal[1] - node[1])
                     if idx < len(path) - 1:
-                        dis_path += math.hypot(node[0] - path[idx+1][0], node[1] - path[idx+1][1])
+                        dis_path += math.hypot(node[0] - path[idx + 1][0], node[1] - path[idx + 1][1])
                 dis.append(dis_path)
             idx = dis.index(min(dis))
             result.extend(paths[idx])
@@ -295,7 +296,8 @@ def main():
     # 主函数
     heuristic_type = "euclidean"
     env = Map(51, 31, heuristic_type=heuristic_type)
-    env.update_obs(obstacles.get_anytime_standard_obs(env.x_range, env.y_range))
+    obs, free = obstacles.get_anytime_standard_obs(env.x_range, env.y_range)
+    env.update_obs(obs, free)
     # improved
     coefficient = 30
     dis_goal_obs = 4
