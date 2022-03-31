@@ -10,6 +10,7 @@ from data.Map import Map
 from data.plotting import plot_map, plot_set_title, plot_clear, plot_path, plot_show
 
 
+# 此方案无法找到合适参考，在本题目的应用场景中存在缺陷，短时间内我无法解决，暂时废弃
 class FuzzyLogic:
     def __init__(self, env, start, goal, rr, show_param):
         self.env = env
