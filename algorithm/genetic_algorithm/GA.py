@@ -111,14 +111,18 @@ class GA:
         return sorted(fitness.items(), key=lambda kv: (kv[1], kv[0]))
 
     def selector(self, fitness):
-        elite = int(len(fitness) * (1 - self.crossover_rate))
-        truncate_1 = len(fitness) // 6 - 1
+        select_num = int(len(fitness) * (1 - self.crossover_rate))
+        truncate_once = select_num//3-1
         truncate_2 = len(fitness) // 3
-        truncate_half = len(fitness) // 2 - 1
-        truncate_3 = len(fitness) * 5 // 6 - 1
+        truncate_3 = len(fitness)*2//3
 
-        return fitness[0: elite], \
-               fitness[0: truncate_1]+fitness[truncate_2: truncate_half]+fitness[2*truncate_2: truncate_3]
+        elite = fitness[0: select_num]
+        truncate = []
+        truncate.extend(fitness[0: truncate_once])
+        truncate.extend(fitness[truncate_2: truncate_2+truncate_once])
+        truncate.extend(fitness[truncate_3: truncate_3+truncate_once])
+
+        return elite, truncate
 
     def cross_over(self, elite, tunc):
         results = []
@@ -189,6 +193,18 @@ class GA:
         next_generation.extend(self.cross_over(elite_population, tunc_population))
         return self.mutation(next_generation), fitness[0]
 
+    def publish_path(self, path):
+        result = [path[0]]
+        for idx in range(len(path)-1):
+            node = path[idx]
+            next_node = path[idx+1]
+            if next_node not in self.get_neighbor(node):
+                sub_path = list(bresenham(node[0], node[1], next_node[0], next_node[1]))
+                result.extend(sub_path[1:])
+            else:
+                result.append(next_node)
+        return result
+
     def explore_path(self):
         plot_clear()
         plot_set_title(self.FLAG)
@@ -214,6 +230,7 @@ class GA:
                 self.is_success = True
 
         end_time = time.time()
+        self.pre_best_path = self.publish_path(self.pre_best_path)
         plot_path(self.pre_best_path, self.start, self.goal)
         print(self.FLAG, "generation:", self.generation, "path length:", path_cost,
               "cost time:", end_time-start_time, 's')
@@ -225,16 +242,16 @@ class GA:
 
 def main():
     # basic
-    start = (5, 5)
-    goal = (45, 25)
+    start = (16, 1)
+    goal = (1, 16)
     max_iter = 1000
     population_max = 100
     mutation_rate = 0.3
     crossover_rate = 0.5
     # 主函数
     heuristic_type = "euclidean"
-    env = Map(51, 31, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_anytime_standard_obs(env.x_range, env.y_range)
+    env = Map(17, 17, heuristic_type=heuristic_type)
+    obs, free = obstacles.get_ga_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
 
     demo = GA(env, start, goal, max_iter, population_max, crossover_rate, mutation_rate)

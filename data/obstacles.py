@@ -10,6 +10,35 @@ def init_free_set(x_range, y_range):
     return free
 
 
+def get_ga_obs(x_range, y_range):
+    x = x_range
+    y = y_range
+    obs = set()
+    free = init_free_set(x, y)
+
+    for i in range(3, 6):
+        for j in range(2, 5):
+            obs.add((i, j))
+
+    for i in range(8, 16):
+        for j in range(4, 6):
+            obs.add((i, j))
+
+    for i in range(1, 9):
+        for j in range(13, 15):
+            obs.add((i, j))
+
+    for i in range(8, 12):
+        obs.add((15, i))
+
+    for i in range(10, 13):
+        for j in range(12, 15):
+            obs.add((i, j))
+
+    free.difference_update(obs)
+    return obs, free
+
+
 def get_anytime_standard_obs(x_range, y_range):
     x = x_range
     y = y_range
