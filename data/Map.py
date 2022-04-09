@@ -37,12 +37,13 @@ class Map:
         绘制地图
         :return: None
         """
-        plot_map(self)
+        plot_map(self.obs)
 
 
 def main():
-    _map = Map()
-    _map.update_obs(obstacles.get_static_obs(_map.x_range, _map.y_range))
+    _map = Map(21, 21)
+    obs, free = obstacles.get_flat_obs(_map.x_range, _map.y_range)
+    _map.update_obs(obs, free)
     _map.draw_map()
     plot_show()
 

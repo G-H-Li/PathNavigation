@@ -253,16 +253,16 @@ class PotentialFieldWithRegression(PotentialField):
 
 def main():
     # basic
-    start = (5, 5)
-    goal = (45, 25)
+    start = (1, 1)
+    goal = (20, 20)
     k_att = 1.0
     k_rep = 0.8
-    rr = 3
+    rr = 2
     max_iter = 1000
     # 主函数
     heuristic_type = "euclidean"
-    env = Map(51, 31, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_anytime_standard_obs(env.x_range, env.y_range)
+    env = Map(21, 21, heuristic_type=heuristic_type)
+    obs, free = obstacles.get_rough_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
     # improved
     coefficient = 30

@@ -149,8 +149,12 @@ class GA:
                 children.append(off_spring2)
 
             fitness = self.get_fitness(children)
-            results.extend([children[fitness[0][0]], children[fitness[1][0]]])
-            m += 2
+            if len(fitness) >= 2:
+                results.extend([children[fitness[0][0]], children[fitness[1][0]]])
+                m += 2
+            elif len(fitness) == 1:
+                results.append(children[fitness[0][0]])
+                m += 1
 
         return results
 
@@ -242,16 +246,16 @@ class GA:
 
 def main():
     # basic
-    start = (16, 1)
-    goal = (1, 16)
+    start = (1, 1)
+    goal = (20, 20)
     max_iter = 1000
     population_max = 100
     mutation_rate = 0.3
     crossover_rate = 0.5
     # 主函数
     heuristic_type = "euclidean"
-    env = Map(17, 17, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_ga_obs(env.x_range, env.y_range)
+    env = Map(21, 21, heuristic_type=heuristic_type)
+    obs, free = obstacles.get_rough_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
 
     demo = GA(env, start, goal, max_iter, population_max, crossover_rate, mutation_rate)

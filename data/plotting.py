@@ -11,7 +11,7 @@ def plot_map(obs):
     obs_x = [x[0] for x in obs]
     obs_y = [x[1] for x in obs]
 
-    plt.plot(obs_x, obs_y, "ks")
+    plt.plot(obs_x, obs_y, "ks", ms=10)
     plt.axis("equal")
 
 
@@ -32,6 +32,8 @@ def plot_path(path, start, goal, color='r'):
 
 
 def plot_show():
+    ax = plt.gca()
+    ax.set_xlim(0, 21)
     plt.show()
 
 

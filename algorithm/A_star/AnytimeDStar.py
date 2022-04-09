@@ -35,8 +35,8 @@ class AnytimeDStar:
         self.error = 0
 
     def init_data(self):
-        for i in range(self.env.x_range):
-            for j in range(self.env.y_range):
+        for i in range(1, self.env.x_range):
+            for j in range(1, self.env.y_range):
                 self.g[(i, j)] = float('inf')
                 self.rhs[(i, j)] = float('inf')
         self.rhs[self.start] = float('inf')
@@ -123,8 +123,8 @@ class AnytimeDStar:
         for u in self.env.motions:
             s_next = tuple([s[i] + u[i] for i in range(2)])
             if s_next not in self.env.obs and \
-                    0 < s_next[0] < self.env.x_range - 1 and \
-                    0 < s_next[1] < self.env.y_range - 1:
+                    0 < s_next[0] < self.env.x_range and \
+                    0 < s_next[1] < self.env.y_range:
                 neighbors.add(s_next)
         return neighbors
 
@@ -133,8 +133,11 @@ class AnytimeDStar:
         获取OPEN字典中的最key值对
         :return:key ， value
         """
-        s = min(self.OPEN, key=self.OPEN.get)
-        return s, self.OPEN[s]
+        if len(self.OPEN) != 0:
+            s = min(self.OPEN, key=self.OPEN.get)
+            return s, self.OPEN[s]
+        else:
+            return None, None
 
     def update_state(self, s):
         """
@@ -169,7 +172,7 @@ class AnytimeDStar:
         """
         while True:
             key, value = self.get_mini_key()
-            if value >= self.get_key(self.start) and self.rhs[self.start] == self.g[self.start]:
+            if key is None or (value >= self.get_key(self.start) and self.rhs[self.start] == self.g[self.start]):
                 break
 
             self.OPEN.pop(key)
@@ -306,12 +309,12 @@ def main():
     :return:
     """
     heuristic_type = "euclidean"
-    env = Map(51, 31, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_anytime_standard_obs(env.x_range, env.y_range)
+    env = Map(21, 21, heuristic_type=heuristic_type)
+    obs, free = obstacles.get_rough_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
 
-    start = (5, 5)
-    goal = (45, 25)
+    start = (1, 1)
+    goal = (20, 20)
     demo = AnytimeDStar(env, start, goal, 2.0, heuristic_type)
     demo.run()
 
