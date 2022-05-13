@@ -1,0 +1,4 @@
+matplotlib~=3.5.1
+numpy~=1.22.3
+scikit-fuzzy~=0.4.2
+bresenham~=0.2.1
