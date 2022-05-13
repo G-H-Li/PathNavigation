@@ -236,7 +236,7 @@ class GA:
         end_time = time.time()
         self.pre_best_path = self.publish_path(self.pre_best_path)
         plot_path(self.pre_best_path, self.start, self.goal)
-        print(self.FLAG, "generation:", self.generation, "path length:", path_cost,
+        print(self.FLAG, "generation:", self.generation, "path length:", len(self.pre_best_path)-1,
               "cost time:", end_time-start_time, 's')
 
     def run(self):
@@ -249,13 +249,13 @@ def main():
     start = (1, 1)
     goal = (20, 20)
     max_iter = 1000
-    population_max = 100
+    population_max = 20
     mutation_rate = 0.3
-    crossover_rate = 0.5
+    crossover_rate = 0.6
     # 主函数
     heuristic_type = "euclidean"
     env = Map(21, 21, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_rough_obs(env.x_range, env.y_range)
+    obs, free = obstacles.get_rug_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
 
     demo = GA(env, start, goal, max_iter, population_max, crossover_rate, mutation_rate)

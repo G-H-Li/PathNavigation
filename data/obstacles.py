@@ -56,11 +56,12 @@ def get_rough_obs(x_range, y_range):
         for j in range(15, 17):
             obs.add((i, j))
 
-    for i in range(8, 12):
-        for j in range(12, 14):
-            obs.add((i, j))
     for i in range(8, 11):
-        obs.add((i, 14))
+        obs.add((i, 11))
+    for i in range(9, 12):
+        obs.add((i, 12))
+    for i in range(7, 11):
+        obs.add((i, 10))
 
     for i in range(8, 13):
         for j in range(4, 6):

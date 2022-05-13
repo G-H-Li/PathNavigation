@@ -42,7 +42,7 @@ class Map:
 
 def main():
     _map = Map(21, 21)
-    obs, free = obstacles.get_flat_obs(_map.x_range, _map.y_range)
+    obs, free = obstacles.get_rough_obs(_map.x_range, _map.y_range)
     _map.update_obs(obs, free)
     _map.draw_map()
     plot_show()

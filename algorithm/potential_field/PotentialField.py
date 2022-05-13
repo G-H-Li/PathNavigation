@@ -164,7 +164,7 @@ class PotentialField:
         if not self.is_success:
             print(self.FLAG, "Do not find path")
         else:
-            print(self.FLAG, "path length:", self.get_path_len(), ", cost:", end_time - start_time, 's')
+            print(self.FLAG, "path length:", len(self.path)-1, ", cost:", end_time - start_time, 's')
         plot_path(self.path, self.start, self.goal)
 
     def run(self):

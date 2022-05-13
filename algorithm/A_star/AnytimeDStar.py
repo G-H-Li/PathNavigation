@@ -22,7 +22,7 @@ class AnytimeDStar:
         self.start = start
         # map info
         self.env = env
-        # store structure
+        # store structure g:预估消耗 rhs：一步预测消耗
         self.g, self.rhs, self.OPEN, self.INCONS = {}, {}, {}, {}
         self.CLOSED = set()
         # initiation
@@ -215,11 +215,11 @@ class AnytimeDStar:
 
         start_time = time.time()
         self.compute_or_improve_path()
+        self.publish_path()
         end_time = time.time()
 
-        print(self.FLAG, "e:", self.eps, ', path length:', self.g[self.start], ', cost:', end_time-start_time, 's')
-        plot_visited(self.visited)
-        self.publish_path()
+        # plot_visited(self.visited)
+        print(self.FLAG, "e:", self.eps, ', path length:', len(self.path) - 1, ', cost:', end_time - start_time, 's')
         plot_path(self.path, self.start, self.goal)
 
     def optimize_path(self):
@@ -310,7 +310,7 @@ def main():
     """
     heuristic_type = "euclidean"
     env = Map(21, 21, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_rough_obs(env.x_range, env.y_range)
+    obs, free = obstacles.get_rug_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
 
     start = (1, 1)

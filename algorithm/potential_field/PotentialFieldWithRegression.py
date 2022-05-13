@@ -6,6 +6,7 @@ from bresenham import bresenham
 from algorithm.potential_field.PotentialField import PotentialField
 from data import obstacles
 from data.Map import Map
+from data.plotting import plot_path
 
 
 class PotentialFieldWithRegression(PotentialField):
@@ -55,10 +56,10 @@ class PotentialFieldWithRegression(PotentialField):
                 min_obs = obs
         dis_qc = math.hypot(min_obs[0] - goal[0], min_obs[1] - goal[1])
         dis_gr = math.hypot(self.current_pos[0] - goal[0], self.current_pos[1] - goal[1])
-        if dis_qc <= self.dis_obs_goal and dis_gr <= self.dis_goal_current:
-            return self.get_attractive_force_rs(self.current_pos, goal)
-        else:
-            return np.add(self.get_attractive_force_rs(self.current_pos, goal), self.get_repulsion_force_rs(goal))
+        # if dis_qc <= self.dis_obs_goal and dis_gr <= self.dis_goal_current:
+        #     return self.get_attractive_force_rs(self.current_pos, goal)
+        # else:
+        return np.add(self.get_attractive_force_rs(self.current_pos, goal), self.get_repulsion_force_rs(goal))
 
     def check_obs_pos(self, goal):
         """
@@ -234,7 +235,7 @@ class PotentialFieldWithRegression(PotentialField):
             force = self.get_total_force_rs(goal)
             pos = self.get_next_pos(self.current_pos, force)
             # 触发局部最小值处理
-            if (pos[0], pos[1]) in self.env.obs:
+            if (pos[0], pos[1]) in self.env.obs and (pos[0], pos[1]) not in self.path:
                 targets = self.deal_minima_problem((pos[0], pos[1]), goal)
                 for target in targets:
                     self.plan_path_rs(np.asarray(target))
@@ -248,21 +249,24 @@ class PotentialFieldWithRegression(PotentialField):
         :return:
         """
         self.plan_path_rs(self.goal)
+        # plot_path(self.path, self.start, self.goal, 'b')
         self.path = self.optimize_path_by_regression()
 
 
 def main():
     # basic
+    # rough rr 1 coefficient 10/15
+    # rug rr 3 coefficient 30
     start = (1, 1)
     goal = (20, 20)
     k_att = 1.0
     k_rep = 0.8
-    rr = 2
+    rr = 3
     max_iter = 1000
     # 主函数
     heuristic_type = "euclidean"
     env = Map(21, 21, heuristic_type=heuristic_type)
-    obs, free = obstacles.get_rough_obs(env.x_range, env.y_range)
+    obs, free = obstacles.get_rug_obs(env.x_range, env.y_range)
     env.update_obs(obs, free)
     # improved
     coefficient = 30
